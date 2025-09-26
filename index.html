@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Masomo SMS - Business Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f9f9f9;
+    }
+    h2, h3 {
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #218838;
+    }
+    #dashboard {
+      display: none;
+    }
+    .message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Masomo SMS Business Dashboard</h2>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label for="nid">National ID</label>
+        <input type="text" id="nid" placeholder="Enter your National ID">
+      </div>
+      <div class="form-group">
+        <label for="pwd">Password</label>
+        <input type="password" id="pwd" placeholder="Enter your Password">
+      </div>
+      <button onclick="login()">Login</button>
+      <div id="loginMsg" class="message"></div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+      <p>Welcome, <span id="userName"></span>! (Credits: <span id="userCredits"></span>)</p>
+
+      <!-- User Keywords Table -->
+      <div id="userKeywordsContainer">
+        <h3>Your Keyword</h3>
+        <table id="userKeywordsTable">
+          <thead>
+            <tr>
+              <th>Keyword</th>
+              <th>Auto-Reply</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Add/Update Keyword Form -->
+      <div id="keywordForm">
+        <div class="form-group">
+          <label for="keyword">Keyword (max 10 chars)</label>
+          <input type="text" id="keyword" maxlength="10" placeholder="e.g. BIZ1">
+        </div>
+        <div class="form-group">
+          <label for="autoReply">Auto-Reply Message</label>
+          <textarea id="autoReply" rows="3" placeholder="Enter your auto-reply message"></textarea>
+        </div>
+        <button onclick="saveKeyword()">Save Keyword</button>
+      </div>
+
+      <div id="keywordMsg" class="message"></div>
+    </div>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://blue-water-63fe.ev-dmaundu.workers.dev/";
+    let currentUser = null;
+
+    async function callWorker(action, payload) {
+      payload.action = action;
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    async function login() {
+      const nid = document.getElementById("nid").value.trim();
+      const pwd = document.getElementById("pwd").value.trim();
+      document.getElementById("loginMsg").innerText = "Please wait...";
+
+      const result = await callWorker("loginUser", { nid, pwd });
+      if (result.success) {
+        currentUser = result.userId;
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        document.getElementById("userName").innerText = result.name;
+        document.getElementById("userCredits").innerText = result.credits;
+        loadUserKeywords();
+      } else {
+        document.getElementById("loginMsg").innerText = result.message;
+      }
+    }
+
+    async function loadUserKeywords() {
+      const result = await callWorker("getUserKeywords", { userId: currentUser });
+      if (result.success) {
+        const tbody = document.querySelector("#userKeywordsTable tbody");
+        tbody.innerHTML = "";
+        const userHasKeyword = result.keywords.length > 0;
+
+        result.keywords.forEach(kw => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${kw.keyword}</td>
+            <td><input type="text" value="${kw.autoReply}" style="width:100%;"/></td>
+            <td>${kw.status}</td>
+            <td><button onclick="saveInline('${kw.keyword}', this)">Save</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("keywordForm").style.display = userHasKeyword ? "none" : "block";
+      }
+    }
+
+    async function saveKeyword() {
+      const keyword = document.getElementById("keyword").value.trim();
+      const autoReply = document.getElementById("autoReply").value.trim();
+
+      if (!keyword || !autoReply) {
+        document.getElementById("keywordMsg").innerText = "Keyword and message are required.";
+        return;
+      }
+
+      document.getElementById("keywordMsg").innerText = "Saving...";
+      const result = await callWorker("saveKeyword", { userId: currentUser, keyword, autoReply });
+      document.getElementById("keywordMsg").innerText = result.message;
+      if (result.success) loadUserKeywords();
+    }
+
+    async function saveInline(oldKeyword, btn) {
+      const row = btn.closest("tr");
+      const newAutoReply = row.querySelector("input").value.trim();
+
+      if (!newAutoReply) {
+        alert("Auto-reply cannot be empty!");
+        return;
+      }
+
+      btn.innerText = "Saving...";
+      btn.disabled = true;
+
+      const result = await callWorker("updateKeywordInline", { 
+        userId: currentUser, 
+        oldKeyword, 
+        newKeyword: oldKeyword, 
+        newAutoReply 
+      });
+
+      alert(result.message);
+      btn.innerText = "Save";
+      btn.disabled = false;
+      loadUserKeywords();
+    }
+  </script>
+</body>
+</html>
