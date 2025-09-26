@@ -6,22 +6,36 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 40px;
-      background: #f9f9f9;
-    }
-    h2, h3 {
-      color: #333;
+      margin: 0;
+      padding: 0;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
     .container {
-      max-width: 600px;
-      margin: auto;
+      width: 100%;
+      max-width: 700px;
       background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+    h3 {
+      color: #555;
+      margin-top: 25px;
+      margin-bottom: 10px;
     }
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      text-align: left;
     }
     label {
       font-weight: bold;
@@ -30,19 +44,28 @@
     }
     input, textarea, button {
       width: 100%;
-      padding: 10px;
-      font-size: 14px;
+      padding: 12px;
+      font-size: 15px;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 8px;
+      box-sizing: border-box;
     }
     button {
       background: #28a745;
       color: white;
       cursor: pointer;
       border: none;
+      transition: background 0.3s;
     }
     button:hover {
       background: #218838;
+    }
+    .logout-btn {
+      background: #dc3545;
+      margin-bottom: 20px;
+    }
+    .logout-btn:hover {
+      background: #c82333;
     }
     #dashboard {
       display: none;
@@ -50,21 +73,22 @@
     .message {
       margin-top: 15px;
       font-weight: bold;
+      color: #333;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 15px;
     }
     table, th, td {
       border: 1px solid #ccc;
     }
     th, td {
-      padding: 8px;
+      padding: 10px;
       text-align: left;
     }
     th {
-      background-color: #f2f2f2;
+      background-color: #f7f7f7;
     }
   </style>
 </head>
@@ -88,6 +112,7 @@
 
     <!-- Dashboard -->
     <div id="dashboard">
+      <button class="logout-btn" onclick="logout()">Logout</button>
       <p>Welcome, <span id="userName"></span>! (Credits: <span id="userCredits"></span>)</p>
 
       <!-- User Keywords Table -->
@@ -153,6 +178,15 @@
       } else {
         document.getElementById("loginMsg").innerText = result.message;
       }
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("nid").value = "";
+      document.getElementById("pwd").value = "";
+      document.getElementById("loginMsg").innerText = "";
     }
 
     async function loadUserKeywords() {
