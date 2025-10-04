@@ -196,16 +196,16 @@
         tbody.innerHTML = "";
         const userHasKeyword = result.keywords.length > 0;
 
-        result.keywords.forEach(kw => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${kw.keyword}</td>
-            <td><input type="text" value="${kw.autoReply}" style="width:100%;"/></td>
-            <td>${kw.status}</td>
-            <td><button onclick="saveInline('${kw.keyword}', this)">Save</button></td>
-          `;
-          tbody.appendChild(tr);
-        });
+      result.keywords.forEach(kw => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${kw.keyword}</td>
+    <td><input type="text" value="${kw.autoReply}" style="width:100%;" maxlength="160"/></td>
+    <td>${kw.status}</td>
+    <td><button onclick="saveInline('${kw.keyword}', this)">Save</button></td>
+  `;
+  tbody.appendChild(tr);
+});
 
         document.getElementById("keywordForm").style.display = userHasKeyword ? "none" : "block";
       }
